@@ -1,0 +1,16 @@
+<html>
+	<script type="text/javascript">
+		function doExport() { 
+			var content = 'nothing';
+			try{ 
+				content =  JSON.stringify(window.localStorage); 
+			} catch(e) { 
+				content = 'error: ' + e 
+			}
+			window.Migrate.exportLocalStorage(content);
+		}
+	</script>
+
+	<body onload='doExport()'>
+	</body>
+</html>

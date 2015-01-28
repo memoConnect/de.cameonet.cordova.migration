@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    id="de.cameonet.cordova.migration"
+    version="0.1">
+
+	<name>cmMigrate</name>
+    <description>cameoNet Migration Plugin</description>
+
+    <js-module src="www/cmMigrate.js" name="cmMigrate">
+        <clobbers target="cmMigrate" />
+    </js-module>
+
+    <platform name="android">
+
+        <config-file target="config.xml" parent="/*">
+            <feature name="Migrate" >
+                <param name="android-package" value="de.cameonet.cordova.migration.Migrate"/>
+            </feature>
+        </config-file>
+
+        <source-file src="src/android/Migrate.java" target-dir="src/de/cameonet/cordova/migration" />
+        <source-file src="www/migrate.html" target-dir="assets" />
+
+    </platform>
+
+
+</plugin>
