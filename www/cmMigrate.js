@@ -5,8 +5,8 @@ var argscheck = require('cordova/argscheck'),
 
 function cmMigrate() {
 
-    this.getOldLocalStorage = function(win, fail) {
-        var args = []
+    this.getOldLocalStorage = function(win, fail, isCrosswalk) {
+        var args = [isCrosswalk]
         exec(win, fail, "Migrate", "getOldLocalStorage", args)
     }
 }

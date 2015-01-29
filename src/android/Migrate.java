@@ -6,72 +6,58 @@ import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONException;
 
-import android.content.ContentValues;
 import android.content.Context;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.util.Log;
 import android.view.View;
-import android.webkit.ConsoleMessage;
-import android.webkit.JavascriptInterface;
-import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-import java.io.BufferedWriter;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.OutputStreamWriter;
-import java.nio.channels.FileChannel;
-
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 
 public class Migrate extends CordovaPlugin {
 
-    public boolean execute(String action, JSONArray args, final CallbackContext callbackContext) {
+    public boolean execute(String action, JSONArray args, final CallbackContext callbackContext) throws JSONException {
 
-        Context context = cordova.getActivity().getApplicationContext();
-        MigrateInterface migrateInterface = new MigrateInterface(callbackContext);
+        if (action.equals("getOldLocalStorage")) {
 
-        // start regular webview
-        WebView webView = new WebView(context);
-
-        // enable javascript and localstorage
-        webView.getSettings().setJavaScriptEnabled(true);
-        webView.getSettings().setDomStorageEnabled(true);
-        webView.setVisibility(View.GONE);
-
-        webView.setWebViewClient(new WebViewClient() {
-            @Override
-            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-                Log.e("CAMEO-CORDOVA", "Error in webview: " + errorCode + " : " + description);
+            // only execute when we are a crosswalk app
+            if (!args.getBoolean(0)) {
+                callbackContext.error("Not a crosswalk app");
+                return true;
             }
 
-            @Override
-            public void onPageFinished(WebView view, String url) {
-                Log.e("CAMEO-CORDOVA", "Loaded page in webview: " + url);
+            String migrationFileName = "migration_complete";
+
+            Context context = cordova.getActivity().getApplicationContext();
+
+            // check migration has already be done
+            File migrationFile = new File(context.getFilesDir(), migrationFileName);
+            if (migrationFile.exists()) {
+                callbackContext.error("Migration already complete");
+                return true;
             }
 
-            @Override
-            public void onPageStarted(WebView view, String url, Bitmap favicon) {
-                Log.e("CAMEO-CORDOVA", "Loading page in webview: " + url);
-            }
-        });
+            // start regular webview
+            WebView webView = new WebView(context);
 
+            // enable javascript and localstorage
+            webView.getSettings().setJavaScriptEnabled(true);
+            webView.getSettings().setDomStorageEnabled(true);
+            webView.setVisibility(View.GONE);
 
-        // Inject WebAppInterface to extract content of localstorage
-        webView.addJavascriptInterface(migrateInterface, "Migrate");
+            // Inject WebAppInterface to extract content of localstorage
+            MigrateInterface migrateInterface = new MigrateInterface(callbackContext, migrationFile);
+            webView.addJavascriptInterface(migrateInterface, "Migrate");
 
-        // load migrate.html, it will export the local storage for the file:// context and call the java callback
-        webView.loadUrl("file:///android_asset/migrate.html");
+            // load migrate.html, it will export the local storage for the file:// context and call the java callback
+            webView.loadUrl("file:///android_asset/migrate.html");
 
-        return true;
+            return true;
+        }
+
+        return false;
     }
 }
 
@@ -79,14 +65,20 @@ public class Migrate extends CordovaPlugin {
 class MigrateInterface {
 
     CallbackContext callbackContext;
+    File migrationFile;
 
-    MigrateInterface(CallbackContext newCallbackContext) {
+    MigrateInterface(CallbackContext newCallbackContext, File newMigrationFile) {
         callbackContext = newCallbackContext;
+        migrationFile = newMigrationFile;
     }
 
-    @JavascriptInterface
     public void exportLocalStorage(String value) {
-        Log.d("cordova", "huup: " + value);
+        try {
+            migrationFile.createNewFile();
+        } catch (IOException e) {
+            //
+        }
+
         callbackContext.success(value);
     }
 }
