@@ -60,13 +60,8 @@ public class Migrate extends CordovaPlugin {
             // load migrate.html, it will export the local storage for the file:// context and call the java callback
             webView.loadUrl("file:///android_asset/migrate.html");
 
-            /*try {
-                Thread.sleep(100000);
-            } catch (InterruptedException e) {
-                //
-            }*/
-
             return true;
+            
         } else if(action.equals("migrationComplete")) {
             Context context = cordova.getActivity().getApplicationContext();
             File migrationFile = new File(context.getFilesDir(), migrationFileName);

@@ -9,6 +9,11 @@ function cmMigrate() {
         var args = [isCrosswalk]
         exec(win, fail, "Migrate", "getOldLocalStorage", args)
     }
+
+	this.migrationComplete = function(win, fail) {
+        var args = []
+        exec(win, fail, "Migrate", "migrationComplete", args)
+    }    
 }
 
 module.exports = new cmMigrate();
