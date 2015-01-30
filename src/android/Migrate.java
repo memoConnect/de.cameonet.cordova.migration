@@ -18,6 +18,8 @@ import java.io.IOException;
 
 public class Migrate extends CordovaPlugin {
 
+    String migrationFileName = "migration_complete";
+
     public boolean execute(String action, JSONArray args, final CallbackContext callbackContext) throws JSONException {
 
         if (action.equals("getOldLocalStorage")) {
@@ -27,8 +29,6 @@ public class Migrate extends CordovaPlugin {
                 callbackContext.error("Not a crosswalk app");
                 return true;
             }
-
-            String migrationFileName = "migration_complete";
 
             Context context = cordova.getActivity().getApplicationContext();
 
@@ -48,12 +48,25 @@ public class Migrate extends CordovaPlugin {
             webView.setVisibility(View.GONE);
 
             // Inject WebAppInterface to extract content of localstorage
-            MigrateInterface migrateInterface = new MigrateInterface(callbackContext, migrationFile);
+            MigrateInterface migrateInterface = new MigrateInterface(callbackContext);
             webView.addJavascriptInterface(migrateInterface, "Migrate");
 
             // load migrate.html, it will export the local storage for the file:// context and call the java callback
             webView.loadUrl("file:///android_asset/migrate.html");
 
+            return true;
+        } else if(action.equals("migrationComplete")) {
+            Context context = cordova.getActivity().getApplicationContext();
+            File migrationFile = new File(context.getFilesDir(), migrationFileName);
+
+            if(!migrationFile.exists()) {
+                try {
+                    migrationFile.createNewFile();
+                    callbackContext.success("true");
+                } catch (IOException e) {
+                    //
+                }
+            }
             return true;
         }
 
@@ -65,20 +78,12 @@ public class Migrate extends CordovaPlugin {
 class MigrateInterface {
 
     CallbackContext callbackContext;
-    File migrationFile;
 
-    MigrateInterface(CallbackContext newCallbackContext, File newMigrationFile) {
+    MigrateInterface(CallbackContext newCallbackContext) {
         callbackContext = newCallbackContext;
-        migrationFile = newMigrationFile;
     }
 
     public void exportLocalStorage(String value) {
-        try {
-            migrationFile.createNewFile();
-        } catch (IOException e) {
-            //
-        }
-
         callbackContext.success(value);
     }
 }
